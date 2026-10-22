@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Festival Control - Backend Serverless con Express, AWS Lambda, API Gateway y Amazon DynamoDB
+
+Parameters:
+  Stage:
+    Type: String
+    Default: prod
+    Description: Entorno de despliegue (dev, prod)
+
+Resources:
+  # 1. Base de Datos Amazon DynamoDB
+  FestivalEventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: FestivalEvents
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      Tags:
+        - Key: Project
+          Value: FestivalControl
+
+  # 2. API Gateway HTTP (CORS habilitado)
+  FestivalHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+
+  # 3. Función Serverless AWS Lambda con Express
+  FestivalLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: server/lambda.handler
+      Runtime: nodejs20.x
+      CodeUri: .
+      MemorySize: 256
+      Timeout: 15
+      Environment:
+        Variables:
+          DYNAMODB_TABLE_NAME: !Ref FestivalEventsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FestivalEventsTable
+      Events:
+        ProxyRoot:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref FestivalHttpApi
+            Path: /
+            Method: ANY
+        ProxyPath:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref FestivalHttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+Outputs:
+  HttpApiUrl:
+    Description: URL pública base generada por API Gateway
+    Value: !Sub "https://${FestivalHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  AmplifyEnvVariable:
+    Description: Copia este valor en la variable EXPO_PUBLIC_API_URL en AWS Amplify Console
+    Value: !Sub "https://${FestivalHttpApi}.execute-api.${AWS::Region}.amazonaws.com/api"
+

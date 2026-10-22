@@ -6,19 +6,30 @@
   "scripts": {
     "start": "expo start",
     "web": "expo start --web",
+    "server": "node server/server.js",
+    "server:watch": "node --watch server/server.js",
+    "dev": "concurrently -n \"API,WEB\" -c \"cyan,magenta\" \"node server/server.js\" \"expo start --web\"",
     "build:web": "expo export --platform web",
+    "package:lambda": "node scripts/package-lambda.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.918.0",
+    "@aws-sdk/lib-dynamodb": "^3.918.0",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.8",
     "expo": "~54.0.0",
     "expo-status-bar": "~3.0.9",
+    "express": "^5.3.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-web": "^0.21.0"
+    "react-native-web": "^0.21.0",
+    "serverless-http": "^4.0.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",
+    "concurrently": "^9.2.1",
     "typescript": "~5.9.2"
   }
 }
